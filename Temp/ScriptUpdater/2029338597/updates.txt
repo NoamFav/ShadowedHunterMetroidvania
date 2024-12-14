@@ -1,0 +1,2 @@
+Temp/ScriptUpdater/2029338597/1964864757_PixelPerfectCameraEditor.cs => Library/PackageCache/com.unity.2d.pixel-perfect/Editor/PixelPerfectCameraEditor.cs
+Temp/ScriptUpdater/2029338597/762851502_U2DToURPPixelPerfectConverter.cs => Library/PackageCache/com.unity.2d.pixel-perfect/Editor/Converter/U2DToURPPixelPerfectConverter.cs
