@@ -7,6 +7,9 @@ public class PlayerMovement : MonoBehaviour
     public LayerMask groundLayer; // Ground layer for raycast detection
 
     private Rigidbody2D rb;
+    private Vector2 boxSize = new Vector2(1.1f, 0.1f); // Small box at player's feet
+    private float groundCheckOffset = 1.2f; // Distance to offset the box to player's feet
+    private float groundCheckDistance = 0.05f; // Slight downward cast for accuracy
 
     void Start()
     {
@@ -19,43 +22,39 @@ public class PlayerMovement : MonoBehaviour
         float move = Input.GetAxis("Horizontal");
         if (move != 0)
         {
-            rb.linearVelocity = new Vector2(move * speed, rb.linearVelocity.y);
+            rb.linearVelocity = new Vector2(move * speed, rb.linearVelocity.y); // Horizontal velocity
         }
 
         // Jumping
-        if (Input.GetButtonDown("Jump"))
+        if (Input.GetButtonDown("Jump") && IsGrounded())
         {
-            if (IsGrounded())
-            {
-                rb.AddForce(Vector2.up * jumpForce, ForceMode2D.Impulse);
-            }
+            rb.AddForce(Vector2.up * jumpForce, ForceMode2D.Impulse);
         }
     }
 
     bool IsGrounded()
-{
-    Vector2 position = transform.position;
-    Vector2 direction = Vector2.down;
-    float distance = 1.5f;
-
-    RaycastHit2D hit = Physics2D.Raycast(position, direction, distance, groundLayer);
-
-    if (hit.collider != null)
     {
-        Debug.Log($"Hit {hit.collider.name}");
-    }
-    else
-    {
-        Debug.Log("No ground detected");
-    }
+        // Box positioned slightly below the player's feet
+        Vector2 position = (Vector2)transform.position + Vector2.down * groundCheckOffset;
 
-    return hit.collider != null;
-}
+        // Perform BoxCast to detect ground
+        RaycastHit2D hit = Physics2D.BoxCast(position, boxSize, 0f, Vector2.down, groundCheckDistance, groundLayer);
+
+        // Debug log for ground detection
+        if (hit.collider != null)
+        {
+            Debug.Log("Ground detected: " + hit.collider.name);
+        }
+
+        return hit.collider != null;
+    }
 
     void OnDrawGizmos()
     {
-        // Visualize the ground check in the Scene view
         Gizmos.color = Color.red;
-        Gizmos.DrawLine(transform.position, transform.position + Vector3.down * 1.5f);
+
+        // Visualize the box at player's feet
+        Vector2 position = (Vector2)transform.position + Vector2.down * groundCheckOffset;
+        Gizmos.DrawWireCube(position, boxSize);
     }
 }
