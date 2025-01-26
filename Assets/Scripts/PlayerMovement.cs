@@ -18,17 +18,40 @@ public class PlayerMovement : MonoBehaviour
 
     void Update()
     {
-        // Horizontal Movement
+        // Move
+        Move();
+        // Jump
+        Jump(); 
+
+        // Wall Slide
+        WallSlide();
+    }
+
+    void Move()
+    {
         float move = Input.GetAxis("Horizontal");
         if (move != 0)
         {
             rb.linearVelocity = new Vector2(move * speed, rb.linearVelocity.y); // Horizontal velocity
         }
+        
+    }
 
-        // Jumping
-        if (Input.GetButtonDown("Jump") && IsGrounded())
+    void Jump()
+    {
+        if( Input.GetButtonDown("Jump") && IsGrounded() )
         {
             rb.AddForce(Vector2.up * jumpForce, ForceMode2D.Impulse);
+        }
+    }
+
+    void WallSlide()
+    {
+        // Check if player is touching a wall
+        if (IsTouchingWall() && !IsGrounded())
+        {
+            // Apply gravity to slide down the wall
+            rb.AddForce(Vector2.down * 2f, ForceMode2D.Force);
         }
     }
 
@@ -44,6 +67,24 @@ public class PlayerMovement : MonoBehaviour
         if (hit.collider != null)
         {
             Debug.Log("Ground detected: " + hit.collider.name);
+        }
+
+        return hit.collider != null;
+    }
+
+    bool IsTouchingWall()
+    {
+        // Box positioned at the player's sides
+        Vector2 position = (Vector2)transform.position;
+        Vector2 direction = rb.linearVelocity.x > 0 ? Vector2.right : Vector2.left;
+
+        // Perform BoxCast to detect walls
+        RaycastHit2D hit = Physics2D.BoxCast(position, boxSize, 0f, direction, 0.1f, groundLayer);
+
+        // Debug log for wall detection
+        if (hit.collider != null)
+        {
+            Debug.Log("Wall detected: " + hit.collider.name);
         }
 
         return hit.collider != null;

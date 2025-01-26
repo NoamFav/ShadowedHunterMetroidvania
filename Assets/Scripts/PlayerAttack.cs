@@ -33,7 +33,7 @@ public class PlayerAttack : MonoBehaviour
     }
 
     void Attack()
-{
+    {
     if (attackPoint == null)
     {
         Debug.LogError("AttackPoint is not assigned!");
