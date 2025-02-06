@@ -2,86 +2,84 @@ using UnityEngine;
 
 public class PlayerMovement : MonoBehaviour
 {
-    public float speed = 5f; // Player speed
-    public float jumpForce = 10f; // Jump force
-
-    // I need to remove the layer logic no? cause the side of a ground is a wall? and the top of a wall is a ground?
-    // I should base on the layer of the object that i hit, no?
-    public LayerMask groundLayer; // Ground layer for raycast detection
-    public LayerMask wallLayer; // Wall layer for raycast detection
-
     private Rigidbody2D rb;
 
-    private Vector2 groundBoxSize = new Vector2(1f, 0.1f); // Box size for ground detection
-    private float groundCheckOffset = 1f; // Distance to offset the box to player's feet
-    private float groundCheckDistance = 0.05f; // Slight downward cast for accuracy
+    [Header("Movement Parameters")]
+    [SerializeField]
+    private float speed = 5f;
 
-    private Vector2 wallBoxSize = new Vector2(.1f, 1.5f); // Box size for wall detection
-    private float wallCheckOffset = 0.5f; // Distance to offset the box to player's slide
-    private float wallCheckDistance = 0.01f; // Slight horizontal cast for accuracy
+    [SerializeField]
+    private float jumpForce = 10f;
 
-    void Start()
-    {
-        rb = GetComponent<Rigidbody2D>();
-    }
+    [SerializeField]
+    private LayerMask groundLayer;
+
+    // Ground detection parameters
+    [Header("Ground Detection")]
+    [SerializeField]
+    private Vector2 groundBoxSize = new Vector2(0.8f, 0.1f);
+
+    [SerializeField]
+    private float groundCheckOffset = 0.5f;
+
+    [SerializeField]
+    private float groundCheckDistance = 0.1f;
+
+    // Wall detection parameters
+    [Header("Wall Detection")]
+    [SerializeField]
+    private Vector2 wallBoxSize = new Vector2(0.1f, 0.8f);
+
+    [SerializeField]
+    private float wallCheckOffset = 0.4f;
+
+    [SerializeField]
+    private float wallCheckDistance = 0.1f;
+
+    void Start() => rb = GetComponent<Rigidbody2D>();
 
     void Update()
     {
         Move();
-        Jump(); 
+        Jump();
         WallSlide();
         ClimbLedge();
     }
 
-    void Move()
-    {
-        float move = Input.GetAxis("Horizontal");
-
-        if (IsGrounded())
-        {
-            // If grounded, ignore wall restrictions
-            rb.linearVelocity = new Vector2(move * speed, rb.linearVelocity.y);
-        }
-        else if (IsTouchingWall())
-        {
-            // If not grounded and touching a wall, stop horizontal movement
-            move = 0;
-            rb.linearVelocity = new Vector2(0, rb.linearVelocity.y);
-        }
-        else
-        {
-            // Normal horizontal movement
-            rb.linearVelocity = new Vector2(move * speed, rb.linearVelocity.y);
-        }
-    }
+    void Move() =>
+        rb.linearVelocity = new Vector2(Input.GetAxis("Horizontal") * speed, rb.linearVelocity.y);
 
     void Jump()
     {
         if (Input.GetButtonDown("Jump") && IsGrounded())
-        {
             rb.AddForce(Vector2.up * jumpForce, ForceMode2D.Impulse);
-        }
     }
 
     void WallSlide()
     {
         if (IsTouchingWall() && !IsGrounded())
         {
-            rb.linearVelocity = new Vector2(rb.linearVelocity.x, -2f);  // Slow descent when wall sliding
+            Debug.Log("Wall slide");
+            rb.linearVelocity = new Vector2(
+                rb.linearVelocity.x,
+                Mathf.Clamp(rb.linearVelocity.y, -2f, float.MaxValue)
+            );
         }
     }
 
     void ClimbLedge()
     {
-        if (Input.GetButtonDown("Jump") && IsTouchingWall())
+        if (IsTouchingWall())
         {
             Vector2 climbCheckPos = (Vector2)transform.position + Vector2.up * 1.5f;
-            RaycastHit2D hit = Physics2D.Raycast(climbCheckPos, Vector2.right * Mathf.Sign(rb.linearVelocity.x), 1f, groundLayer);
+            bool canClimb = !Physics2D.Raycast(climbCheckPos, GetWallDirection(), 1f, groundLayer);
 
-            if (hit.collider != null && Mathf.Abs(hit.normal.y) > 0.5f)  // Ensure there's ground above
+            if (canClimb)
             {
-                Debug.Log("Ledge detected, climbing...");
-                rb.linearVelocity = new Vector2(rb.linearVelocity.x, jumpForce);
+                Debug.Log("Climb ledge");
+                var vector = new Vector2(rb.linearVelocity.x, jumpForce);
+
+                rb.linearVelocity = vector;
             }
         }
     }
@@ -89,41 +87,45 @@ public class PlayerMovement : MonoBehaviour
     bool IsGrounded()
     {
         Vector2 position = (Vector2)transform.position + Vector2.down * groundCheckOffset;
-
-        // Check both ground and wall layers
-        RaycastHit2D hit = Physics2D.BoxCast(position, groundBoxSize, 0f, Vector2.down, groundCheckDistance, groundLayer);
-
-        if (hit.collider != null && Mathf.Abs(hit.normal.y) > 0.5f)  // Ensure surface is ground-like
-        {
-            Debug.Log("Landed on the ground: " + hit.collider.name);
-            return true;
-        }
-        return false;
+        RaycastHit2D hit = Physics2D.BoxCast(
+            position,
+            groundBoxSize,
+            0f,
+            Vector2.down,
+            groundCheckDistance,
+            groundLayer
+        );
+        return hit.collider != null && hit.normal.y > 0.9f;
     }
 
     bool IsTouchingWall()
     {
-        Vector2 position = (Vector2)transform.position + new Vector2((rb.linearVelocity.x > 0 ? 1 : -1) * wallCheckOffset, 0);
-        Vector2 direction = rb.linearVelocity.x > 0 ? Vector2.right : Vector2.left;
+        Vector2 direction = GetWallDirection();
+        Vector2 position = (Vector2)transform.position + direction * wallCheckOffset;
 
-        RaycastHit2D hit = Physics2D.BoxCast(position, wallBoxSize, 0f, direction, wallCheckDistance, groundLayer);
-
-        if (hit.collider != null && Mathf.Abs(hit.normal.x) > 0.5f)  // Ensure surface is wall-like
-        {
-            Debug.Log("Touching a wall: " + hit.collider.name);
-            return true;
-        }
-        return false;
+        RaycastHit2D hit = Physics2D.BoxCast(
+            position,
+            wallBoxSize,
+            0f,
+            direction,
+            wallCheckDistance,
+            groundLayer
+        );
+        return hit.collider != null && Mathf.Abs(hit.normal.x) > 0.9f;
     }
+
+    Vector2 GetWallDirection() => new Vector2(Mathf.Sign(rb.linearVelocity.x), 0);
 
     void OnDrawGizmos()
     {
+        // Ground check
         Gizmos.color = Color.red;
-        Vector2 position = (Vector2)transform.position + Vector2.down * groundCheckOffset;
-        Gizmos.DrawWireCube(position, groundBoxSize);
+        Vector2 groundPos = (Vector2)transform.position + Vector2.down * groundCheckOffset;
+        Gizmos.DrawWireCube(groundPos, groundBoxSize);
 
+        // Wall check
         Gizmos.color = Color.blue;
-        position = (Vector2)transform.position + new Vector2((rb.linearVelocity.x > 0 ? 1 : -1) * wallCheckOffset, 0);
-        Gizmos.DrawWireCube(position, wallBoxSize);
+        Vector2 wallPos = (Vector2)transform.position + GetWallDirection() * wallCheckOffset;
+        Gizmos.DrawWireCube(wallPos, wallBoxSize);
     }
 }
