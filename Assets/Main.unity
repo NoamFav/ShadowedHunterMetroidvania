@@ -706,14 +706,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c50d719cfcb6749208fe672163174863, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  speed: 5
-  jumpForce: 6
+  moveSpeed: 5
+  jumpForce: 10
+  groundCheckDistance: 0.1
   groundLayer:
     serializedVersion: 2
     m_Bits: 8
-  wallLayer:
-    serializedVersion: 2
-    m_Bits: 0
+  wallCheckDistance: 0.1
 --- !u!50 &2056621922
 Rigidbody2D:
   serializedVersion: 5
