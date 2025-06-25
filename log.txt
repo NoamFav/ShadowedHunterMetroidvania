@@ -1,4 +1,0 @@
-{"Event":"log","Body":{"LogLevel":"INFORMATION","Name":"OmniSharp.Stdio.Host","Message":"Starting OmniSharp on MacOS 15.3 (Unknown)"},"Seq":1,"Type":"event"}
-{"Event":"log","Body":{"LogLevel":"INFORMATION","Name":"OmniSharp.Services.DotNetCliService","Message":"DotNetPath set to dotnet"},"Seq":2,"Type":"event"}
-{"Event":"log","Body":{"LogLevel":"INFORMATION","Name":"OmniSharp.MSBuild.Discovery.MSBuildLocator","Message":"Located 0 MSBuild instance(s)"},"Seq":3,"Type":"event"}
-{"Event":"log","Body":{"LogLevel":"ERROR","Name":"OmniSharp.CompositionHostBuilder","Message":"Could not locate MSBuild instance to register with OmniSharp"},"Seq":4,"Type":"event"}
